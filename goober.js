@@ -19,6 +19,7 @@ const NYK_PREFIX = "!";
 const ROAST_PREFIX = "%";
 const HISTORY_BUFF = "^";
 const OG = '*';
+const IMAGE = 'img:';
 const DESTINY = 'topic:destiny';
 const EMO = 'mood:support';
 const CHANNELS = ['1159232678508376085'];
@@ -98,17 +99,17 @@ client.on('messageCreate', async (message) => {
     let prevMessages = await message.channel.messages.fetch({ limit: MESSAGE_LOOKBACK });
 
     prevMessages.reverse();
-    prevMessages.forEach((message) => {
-        if (message.author.bot && message.author.id !== client.user.id) return;
-        if (message.content.startsWith(IGNORE_PREFIX)) return;
+    prevMessages.forEach((m) => {
+        if (m.author.bot && m.author.id !== client.user.id) return;
+        if (m.content.startsWith(IGNORE_PREFIX)) return;
 
-        const username = message.author.username.replace(/\s+/g, '_').replace(/[^\w\s]/gi, '');
+        const username = m.author.username.replace(/\s+/g, '_').replace(/[^\w\s]/gi, '');
         
-        if (message.author.id == client.user.id) {
+        if (m.author.id == client.user.id) {
             conversation.push({
                 role: 'assistant',
                 name: username,
-                content: message.content
+                content: m.content
             })
             return;
         }
@@ -117,15 +118,29 @@ client.on('messageCreate', async (message) => {
         conversation.push({
             role: 'user',
             name: username,
-            content: message.content
+            content: m.content
         })
     })
 
-    const response = await openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: conversation,
-    })
-    .catch((error) => console.error('OpenAI Error: \n', error));
+    let response;
+    let img_url;
+    if (message.content.startsWith(IMAGE)) {
+        response = await openai.images.generate({
+            prompt: message.content,
+            n: 1,
+            size: "1024x1024",
+        })
+        .catch((error) => console.error('OpenAI Error: \n', error));
+        img_url = response.data[0].url;
+    }
+
+    else {
+        response = await openai.chat.completions.create({
+            model: 'gpt-4',
+            messages: conversation,
+        })
+        .catch((error) => console.error('OpenAI Error: \n', error));
+    }
     
     clearInterval(sendTypingInterval);
     if (!response) {
@@ -133,13 +148,18 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
-    const responseMessage = response.choices[0].message.content;
-    const chunkSizeLimit = DISCORD_CHUNK_SIZE_LIMIT;
-
-    for (let i = 0; i < responseMessage.length; i+= chunkSizeLimit) {
-        const chunk = responseMessage.substring(i, i + chunkSizeLimit);
-        await message.reply(chunk);
+    if (!message.content.startsWith(IMAGE)) {
+        const responseMessage = response.choices[0].message.content;
+        const chunkSizeLimit = DISCORD_CHUNK_SIZE_LIMIT;
+    
+        for (let i = 0; i < responseMessage.length; i+= chunkSizeLimit) {
+            const chunk = responseMessage.substring(i, i + chunkSizeLimit);
+            await message.reply(chunk);
+        }
+    } else if (img_url) {
+        await message.reply(img_url);
     }
+
 })
 
 client.login(process.env.TOKEN);
