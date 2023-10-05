@@ -22,6 +22,8 @@ const OG = '*';
 const IMAGE = 'img:';
 const DESTINY = 'topic:destiny';
 const EMO = 'mood:support';
+const HELP = 'goober -help';
+const GET_CHANNELS = 'goober -channels';
 const CHANNELS = ['1159232678508376085'];
 const MESSAGE_LOOKBACK = 10;
 const DISCORD_CHUNK_SIZE_LIMIT = 2000;
@@ -44,7 +46,6 @@ client.on('messageCreate', async (message) => {
 
     let conversation = [];
 
-
     // if (message.content.startsWith(NYK_PREFIX)) {
     //     conversation.push({
     //         role: 'system',
@@ -52,7 +53,19 @@ client.on('messageCreate', async (message) => {
     //     })
     // }
 
-    if (message.content.startsWith(OG)) {
+    if(message.content.startsWith(HELP)) {
+        message.reply("```Hello! I'm Goober, or the big Goob. I have a few tricks up my sleeve. Prefix with: \n * for my original tone \n % if you want to have some fun \n ^ if you want to get a little historical \n - if you want to ignore me in non #goob-chat channels \n img: for image generation \n You can also try x:y where x is a machine command and y is a topic \n For example, topic:destiny or mood:happy```")
+        clearInterval(sendTypingInterval);
+        return;
+    }
+    
+    else if(message.content.startsWith(GET_CHANNELS)) {
+        message.reply("The following are auto goober enabled. You can tag goob outside of these: " + CHANNELS)
+        clearInterval(sendTypingInterval);
+        return;
+    }
+
+     else if (message.content.startsWith(OG)) {
         conversation.push({
             role: 'system',
             content: 'Chat GPT (but goes by Goober) is a slightly toxic gamer buddy.'
