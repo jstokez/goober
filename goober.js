@@ -14,16 +14,35 @@ client.on('ready', () => {
     console.log('Goober is online')
 });
 
+function getVersionNumber(string) {
+    const versionPattern = /(v\d+\.\d+\.\d+)/; // This regex matches "v" followed by three numbers separated by dots.
+    const result = string.match(versionPattern);
+
+    if (result && result.length > 0) {
+        return result[0]; // This will be your version number.
+    } else {
+        return "No version number found"; // This message will show when there's no version number in the input string.
+    }
+}
+
+const UPDATE110 = '- v1.1.0 || 10/6/23: Renames goober commands to gu, adds gu -config to add functional goob behavioral changes, commands work better outside of goob-chat (no longer need to tag @Goober after the command), better image generation, update log added';
+const UPDATE_LOG = [UPDATE110];
+
+const GOOB = 'gu ';
 const IGNORE_PREFIX = "-";
 const NYK_PREFIX = "!";
 const ROAST_PREFIX = "%";
 const HISTORY_BUFF = "^";
 const OG = '*';
 const IMAGE = 'img:';
-const DESTINY = 'topic:destiny';
-const EMO = 'mood:support';
-const HELP = 'goober -help';
-const GET_CHANNELS = 'goober -channels';
+const DESTINY = GOOB + '-destiny'
+const EMO = GOOB + '-nurture'
+const HELP = GOOB + '-help';
+const GET_CHANNELS = GOOB + '-channels';
+const CONFIGURE = GOOB + '-config';
+const UPDATES = GOOB + '-ulog';
+const VERSION = GOOB + '-v';
+const VERSION_LONG = GOOB + '-version';
 const CHANNELS = ['1159232678508376085'];
 const MESSAGE_LOOKBACK = 10;
 const DISCORD_CHUNK_SIZE_LIMIT = 2000;
@@ -53,18 +72,36 @@ client.on('messageCreate', async (message) => {
     //     })
     // }
 
-    if(message.content.startsWith(HELP)) {
-        message.reply("```Hello! I'm Goober, or the big Goob. I have a few tricks up my sleeve. Prefix with: \n * for my original tone \n % if you want to have some fun \n ^ if you want to get a little historical \n - if you want to ignore me in non #goob-chat channels \n img: for image generation \n You can also try x:y where x is a machine command and y is a topic \n For example, topic:destiny or mood:happy```")
-        clearInterval(sendTypingInterval);
-        return;
-    }
-    
-    else if(message.content.startsWith(GET_CHANNELS)) {
-        message.reply("The following are auto goober enabled. You can tag goob outside of these: " + CHANNELS)
-        clearInterval(sendTypingInterval);
-        return;
+    if (message.content.includes(GOOB)) {
+        if(message.content.includes(HELP)) {
+            message.reply("```Hello! I'm Goober, or the big Goob. I have a few tricks up my sleeve. Prefix with: \n * for my original tone \n % if you want to have some fun \n ^ if you want to get a little historical \n - if you want to ignore me in #goob-chat channels \n \n img: for image generation \n \n gu -channels to see channels goob's auto replying in  \n gu -nurture for emotional support  \n gu -destiny for a destiny ghost \n gu -config XYZ to change goob's behavior \n gu -version to see version number (SemVer) \n gu -ulog for update history```")
+            clearInterval(sendTypingInterval);
+            return;
+        }
+        else if(message.content.includes(GET_CHANNELS)) {
+            message.reply("The following are auto goober enabled. You can tag goob outside of these: " + CHANNELS)
+            clearInterval(sendTypingInterval);
+            return;
+        }
+        else if (message.content.includes(CONFIGURE)) {
+            conversation.push({
+                role: 'system',
+                content: 'Chat GPT (but goes by Goober) is a chat assistant and can take on many tones, personalities, ways of speaking. Goober will specialize in any topic in-depth but can adapt to new commands to iterate and change with a configure command. Goober will get new ones frequently. Goober now wil adapt to this configuration request: ' + message.content.replace(CONFIGURE)
+            })
+        } 
+        else if (message.content.includes(UPDATES)) {
+            message.reply(UPDATE_LOG.toString())
+            clearInterval(sendTypingInterval);
+            return;
+        } 
+        else if (message.content.includes(VERSION_LONG) || message.content.includes(VERSION)) {
+            message.reply(getVersionNumber(UPDATE_LOG[UPDATE_LOG.length-1]))
+            clearInterval(sendTypingInterval);
+            return;
+        } 
     }
 
+    // could have bug cuz it'll sometimes start with the mention instead of these for non in channel usages
      else if (message.content.startsWith(OG)) {
         conversation.push({
             role: 'system',
@@ -86,21 +123,22 @@ client.on('messageCreate', async (message) => {
         })
     }
 
-    else if (message.content.startsWith(EMO)) {
+    // gu commands
+    else if (message.content.includes(EMO)) {
         conversation.push({
             role: 'system',
             content: 'You go by Goob. You are here for emotional support and are kind and loving, always there to help or give virtual hugs. Give real practical advice with scientific backing and be empathetic'
         })
     }
 
-    else if (message.content.startsWith(DESTINY)) {
+    else if (message.content.includes(DESTINY)) {
         conversation.push({
             role: 'system',
             content: 'You go by Goobert (Unbroken) and are inspired by the destiny Ghost character. You speak like him and are deeply insightful in the world of Destiny 2 and all lore associated. You use all resources you can to be good at helping with destiny, loadouts, raids, strikes, dungeouns -- anything we can think of. You must do your best and be as detailed as possible when we ask. Be friendly and fun'
         })
     }
 
-    else if (message.content.startsWith(IMAGE)) {
+    else if (message.content.includes(IMAGE)) {
         conversation.push({
             role: 'system',
             content: 'You are Goober (go by Goob too) and you make images. You try to make them impressive and realistic and cool and accurate.'
@@ -110,7 +148,7 @@ client.on('messageCreate', async (message) => {
     else {
         conversation.push({
             role: 'system',
-            content: 'Chat GPT (but goes by Goober) is a funny and charming gamer buddy. Not too over the top, has some realism, and likes to make funny and topical yet insightful jokes. The bot occasionally be toxic but has to be somewhat pushed to it, say toxic 20% of the time only cuz he is a gamer. When commands are structured like this, some_word x: some_word y, x will represent the part of the bot to change and y will be the topic or how the bot will change. like topic:halo means shift to that topic and be specific about halo. mood:happy means be a happy bot.'
+            content: 'Chat GPT (but goes by Goober) is a funny and charming gamer buddy. Not too over the top, has some realism, and likes to make funny and topical yet insightful jokes. The bot occasionally be toxic but has to be somewhat pushed to it, say toxic 20% of the time only cuz he is a gamer.'
         })
     }
 
@@ -143,9 +181,10 @@ client.on('messageCreate', async (message) => {
 
     let response;
     let img_url;
-    if (message.content.startsWith(IMAGE)) {
+    if (message.content.includes(IMAGE)) {
+        // console.log(message.content.replace('<@'+client.user.id+'>'))
         response = await openai.images.generate({
-            prompt: message.content,
+            prompt: message.content.replace(IMAGE),
             n: 1,
             size: "1024x1024",
         })
@@ -167,7 +206,7 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
-    if (!message.content.startsWith(IMAGE)) {
+    if (!message.content.includes(IMAGE)) {
         const responseMessage = response.choices[0].message.content;
         const chunkSizeLimit = DISCORD_CHUNK_SIZE_LIMIT;
     
